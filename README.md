@@ -57,3 +57,19 @@ Two output files will be generated:
 result.txt
 issue.txt
 ```
+
+## Video Metadata Validation Criteria
+The script extracts metadata from every supported video file in the video directory and checks the video FPS and duration against the expected values.
+
+### FPS
+- Expected FPS: 30.0 FPS
+- Allowed tolerance: ±0.1 FPS
+- Accepted range: 29.9–30.1 FPS (inclusive)
+
+### Duration
+- Expected duration: 30.0 seconds
+- Allowed tolerance: ±0.1 seconds
+- Accepted range: 29.9–30.1 seconds (inclusive)
+
+### Issue Report
+Videos that do not meet the FPS or duration criteria are listed in `issue.txt`. Videos that cannot be opened or whose metadata cannot be extracted are also reported as metadata extraction failures.
