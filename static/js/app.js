@@ -1,8 +1,148 @@
-const zone=document.querySelector('#dropzone'),input=document.querySelector('#file-input'),results=document.querySelector('#results');let rows=[];
-document.querySelector('#browse').onclick=()=>input.click(); input.onchange=e=>send([...e.target.files]);
-['dragenter','dragover'].forEach(t=>zone.addEventListener(t,e=>{e.preventDefault();zone.classList.add('drag');})); ['dragleave','drop'].forEach(t=>zone.addEventListener(t,e=>{e.preventDefault();zone.classList.remove('drag');})); zone.ondrop=e=>send([...e.dataTransfer.files]);
-document.querySelector('#clear').onclick=()=>{rows=[];render();};
-async function send(files){if(!files.length)return;const form=new FormData;files.forEach(f=>form.append('files',f)); const pending=files.map(f=>({file:f.name,status:'loading'}));rows.push(...pending);render();try{const res=await fetch('/api/analyze',{method:'POST',body:form});const data=await res.json();if(!res.ok)throw Error(data.error||'분석 요청 실패');pending.forEach((item,i)=>Object.assign(item,data.results[i]||{file:item.file,status:'error',issues:['결과를 받지 못했습니다.']}));}catch(e){pending.forEach(item=>Object.assign(item,{status:'error',issues:[e.message]}));}render();}
-function render(){const done=rows.filter(x=>x.status!=='loading'),normal=done.filter(x=>x.status==='normal').length,problem=done.filter(x=>x.status!=='normal').length;['file-count','total'].forEach(id=>document.querySelector('#'+id).textContent=rows.length);document.querySelector('#normal').textContent=normal;document.querySelector('#issue').textContent=problem;document.querySelector('#clear').disabled=!rows.length;document.querySelector('#empty').hidden=!!rows.length;document.querySelector('#table-wrap').hidden=!rows.length;results.innerHTML=rows.map(row).join('');}
-function row(x){let status=x.status==='normal'?'정상':x.status==='issue'?'확인 필요':x.status==='loading'?'분석 중':'분석 실패';let cls=x.status==='normal'?'ok':x.status==='loading'?'wait':'warn';return `<tr><td><b>${esc(x.file)}</b></td><td><span class="badge ${cls}">${status}</span></td><td>${num(x.fps,3)}</td><td>${x.frame_count??'—'}</td><td>${x.duration_seconds==null?'—':num(x.duration_seconds,3)+' s'}</td><td>${x.width?x.width+' × '+x.height:'—'}</td><td>${x.codec||'—'}<small>${x.size_bytes?size(x.size_bytes):''}</small></td><td class="notes">${(x.issues||[]).map(esc).join('<br>')||'기준 통과'}</td></tr>`;}
-function num(n,d){return Number.isFinite(n)?Number(n).toFixed(d):'—'} function size(b){return b<1048576?(b/1024).toFixed(0)+' KB':(b/1048576).toFixed(1)+' MB'} function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+const zone = document.querySelector("#dropzone");
+const input = document.querySelector("#file-input");
+const results = document.querySelector("#results");
+
+let rows = [];
+
+document.querySelector("#browse").onclick = () => input.click();
+
+input.onchange = (e) => send([...e.target.files]);
+
+["dragenter", "dragover"].forEach((t) =>
+  zone.addEventListener(t, (e) => {
+    e.preventDefault();
+    zone.classList.add("drag");
+  }),
+);
+
+["dragleave", "drop"].forEach((t) =>
+  zone.addEventListener(t, (e) => {
+    e.preventDefault();
+    zone.classList.remove("drag");
+  }),
+);
+
+zone.ondrop = (e) => send([...e.dataTransfer.files]);
+
+document.querySelector("#clear").onclick = () => {
+  rows = [];
+  render();
+};
+
+async function send(files) {
+  if (!files.length) return;
+
+  const form = new FormData();
+
+  files.forEach((f) => form.append("files", f));
+
+  const pending = files.map((f) => ({
+    file: f.name,
+    status: "loading",
+  }));
+
+  rows.push(...pending);
+  render();
+
+  try {
+    const res = await fetch("/api/analyze", {
+      method: "POST",
+      body: form,
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw Error(data.error || "분석 요청 실패");
+    }
+
+    pending.forEach((item, i) =>
+      Object.assign(
+        item,
+        data.results[i] || {
+          file: item.file,
+          status: "error",
+          issues: ["결과를 받지 못했습니다."],
+        },
+      ),
+    );
+  } catch (e) {
+    pending.forEach((item) =>
+      Object.assign(item, {
+        status: "error",
+        issues: [e.message],
+      }),
+    );
+  }
+
+  render();
+}
+
+function render() {
+  const done = rows.filter((x) => x.status !== "loading");
+  const normal = done.filter((x) => x.status === "normal").length;
+  const problem = done.filter((x) => x.status !== "normal").length;
+
+  ["file-count", "total"].forEach(
+    (id) => (document.querySelector("#" + id).textContent = rows.length),
+  );
+
+  document.querySelector("#normal").textContent = normal;
+  document.querySelector("#issue").textContent = problem;
+  document.querySelector("#clear").disabled = !rows.length;
+  document.querySelector("#empty").hidden = !!rows.length;
+  document.querySelector("#table-wrap").hidden = !rows.length;
+
+  results.innerHTML = rows.map(row).join("");
+}
+
+function row(x) {
+  const status =
+    x.status === "normal"
+      ? "정상"
+      : x.status === "issue"
+        ? "확인 필요"
+        : x.status === "loading"
+          ? "분석 중"
+          : "분석 실패";
+
+  const cls =
+    x.status === "normal" ? "ok" : x.status === "loading" ? "wait" : "warn";
+
+  return `<tr>
+    <td><b>${esc(x.file)}</b></td>
+    <td><span class="badge ${cls}">${status}</span></td>
+    <td>${num(x.fps, 3)}</td>
+    <td>${x.frame_count ?? "—"}</td>
+    <td>${x.duration_seconds == null ? "—" : num(x.duration_seconds, 3) + " s"}</td>
+    <td>${x.width ? x.width + " × " + x.height : "—"}</td>
+    <td>${x.codec || "—"}<small>${x.size_bytes ? size(x.size_bytes) : ""}</small></td>
+    <td class="notes">
+      ${(x.issues || []).map(esc).join("<br>") || "기준 통과"}
+    </td>
+  </tr>`;
+}
+
+function num(n, d) {
+  return Number.isFinite(n) ? Number(n).toFixed(d) : "—";
+}
+
+function size(b) {
+  return b < 1048576
+    ? (b / 1024).toFixed(0) + " KB"
+    : (b / 1048576).toFixed(1) + " MB";
+}
+
+function esc(s) {
+  return String(s ?? "").replace(
+    /[&<>'"]/g,
+    (c) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "'": "&#39;",
+        '"': "&quot;",
+      })[c],
+  );
+}
