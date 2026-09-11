@@ -1,65 +1,44 @@
 # Organoid Video Inspector
 
-A local, OpenCV-powered web application for inspecting organoid video files. Upload one or more videos to extract metadata and flag files that do not meet the expected FPS or duration.
+A local, OpenCV-powered web application for inspecting organoid videos. Upload one or more files to extract their metadata and flag files that do not meet the expected FPS.
 
 ## Features
 
-- Drag-and-drop or file-picker video upload
+- Drag-and-drop or file-picker upload
 - Batch analysis of AVI, MP4, MOV, MKV, and WMV files
 - Metadata extraction: FPS, frame count, duration, resolution, codec, and file size
-- Automatic validation against expected FPS and duration values
-- Per-file analysis errors and validation issue messages
+- FPS validation against the configured expected value
+- Per-file validation errors and analysis error messages
 - Temporary uploads are deleted immediately after analysis
-
-## Requirements
-
-- Python 3.9 or later
-- A local OpenCV-compatible video backend
 
 ## Installation and Usage
 
-From the project directory, install the dependencies and start the application:
+Python 3.9 or later is required.
 
 ```powershell
 pip install -r requirements.txt
 python app.py
 ```
 
-Then open the following URL in a browser:
+Open `http://127.0.0.1:5000` in your browser.
 
-```text
-http://127.0.0.1:5000
-```
+## Validation Rule
 
-## How to Use
+| Field | Expected value | Tolerance |
+| ----- | -------------: | --------: |
+| FPS   |             30 |   +/- 0.1 |
 
-1. Drag video files into the upload area, or click **Select files**.
-2. You can submit multiple files in one request.
-3. Review each file's FPS, frame count, duration, resolution, codec, file size, and validation result in the results table.
+Duration is displayed as informational metadata only. It does not affect the validation result.
 
-Supported formats: `.avi`, `.mp4`, `.mov`, `.mkv`, `.wmv`
-
-## Validation Rules
-
-| Field    | Expected value |    Tolerance |
-| -------- | -------------: | -----------: |
-| FPS      |             30 |         ±0.1 |
-| Duration |     30 seconds | ±0.1 seconds |
-
-You can change these values in `extract_avi_metadata.py`:
-
-- `EXPECTED_FPS`
-- `FPS_TOLERANCE`
-- `EXPECTED_DURATION_SECONDS`
-- `DURATION_TOLERANCE_SECONDS`
+Change `EXPECTED_FPS` and `FPS_TOLERANCE` in `extract_avi_metadata.py` to use a different rule.
 
 ## Project Structure
 
 ```text
-├── app.py                         # Flask application and analysis API
-├── extract_avi_metadata.py        # OpenCV metadata extraction logic
+├── app.py
+├── extract_avi_metadata.py
 ├── templates/
-│   └── index.html                 # User interface
+│   └── index.html
 ├── static/
 │   ├── css/style.css
 │   └── js/app.js
@@ -68,4 +47,4 @@ You can change these values in `extract_avi_metadata.py`:
 
 ## File Handling and Privacy
 
-The application runs locally. Uploaded videos are written to a temporary file only while OpenCV analyses them, then deleted whether analysis succeeds or fails. Files are not permanently stored or sent to an external server.
+The application runs locally. Uploaded videos are written to a temporary file while OpenCV analyses them, then deleted whether analysis succeeds or fails. Files are not permanently stored or sent to an external server.

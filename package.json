@@ -1,0 +1,11 @@
+{
+  "name": "organoid-video-fps",
+  "private": true,
+  "scripts": {
+    "format": "prettier --write \"**/*.{css,html,js,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{css,html,js,json,md,yml,yaml}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3"
+  }
+}
