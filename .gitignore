@@ -1,0 +1,6 @@
+previous
+
+# PyInstaller
+build/
+dist/
+*.spec.bak
