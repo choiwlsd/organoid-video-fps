@@ -41,10 +41,10 @@ Supported formats: `.avi`, `.mp4`, `.mov`, `.mkv`, `.wmv`
 
 ## Validation Rules
 
-| Field | Expected value | Tolerance |
-| --- | ---: | ---: |
-| FPS | 30 | ±0.1 |
-| Duration | 30 seconds | ±0.1 seconds |
+| Field    | Expected value |    Tolerance |
+| -------- | -------------: | -----------: |
+| FPS      |             30 |         ±0.1 |
+| Duration |     30 seconds | ±0.1 seconds |
 
 You can change these values in `extract_avi_metadata.py`:
 
