@@ -35,12 +35,12 @@ Windows 배포본은 Python이나 OpenCV를 별도로 설치하지 않고 실행
 
 Python 3.9 이상을 권장합니다.
 
-```powershell
+```bash
 python -m venv .venv
-.venv\Scripts\Activate.ps1
+source .venv/Scripts/activate
 python -m pip install --upgrade pip
-pip install -r requirements.txt
-python app.py
+pip install -r requirements-dev.txt
+pyinstaller VideoMetadataChecker.spec
 ```
 
 개발 환경에서는 Flask 디버그 모드로 `http://127.0.0.1:5000`에서 실행되며 로그를 콘솔에서 확인할 수 있습니다.
