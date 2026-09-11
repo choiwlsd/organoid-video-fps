@@ -6,6 +6,8 @@ const loading = document.querySelector('#upload-loading');
 const modal = document.querySelector('#error-modal');
 const modalMessage = document.querySelector('#modal-message');
 const supportedExtensions = new Set(['avi', 'mp4', 'mov', 'mkv', 'wmv']);
+const isVercelDeployment = window.location.hostname.endsWith('.vercel.app');
+const vercelRequestLimit = 4 * 1024 * 1024;
 let rows = [];
 let activeUploads = 0;
 
@@ -58,6 +60,16 @@ async function send(files) {
       `${rejected.map((file) => `<strong>${escapeHtml(file.name)}</strong>`).join('<br>')}<br><br>Supported: AVI, MP4, MOV, MKV, WMV`,
     );
   if (!accepted.length) return;
+  if (
+    isVercelDeployment &&
+    accepted.reduce((total, file) => total + file.size, 0) > vercelRequestLimit
+  ) {
+    showModal(
+      'Upload is too large for Vercel',
+      'Vercel Functions accept requests smaller than 4.5 MB. Please analyze this video locally or use a direct-to-storage upload service.',
+    );
+    return;
+  }
 
   const form = new FormData();
   accepted.forEach((file) => form.append('files', file));

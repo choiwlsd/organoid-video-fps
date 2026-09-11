@@ -11,7 +11,8 @@ from flask import Flask, jsonify, render_template, request
 from extract_avi_metadata import EXPECTED_FPS, FPS_TOLERANCE, VIDEO_EXTENSIONS, extract_metadata
 
 app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024 * 1024
+# Vercel Functions cap request bodies at 4.5 MB; retain a small multipart safety margin.
+app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024
 DURATION_WARNING_SECONDS = 31.0
 
 
