@@ -1318,3 +1318,55 @@ body.modal-open {
     sans-serif;
   cursor: pointer;
 }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.shutdown-button {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font:
+    650 11px Pretendard Variable,
+    Pretendard,
+    Arial,
+    sans-serif;
+  cursor: pointer;
+}
+
+.shutdown-button:hover {
+  border-color: #ffc7c7;
+  background: var(--red-light);
+  color: var(--red);
+}
+.modal-actions {
+  display: flex;
+  gap: 9px;
+}
+.modal-actions .modal-confirm {
+  width: auto;
+  flex: 1;
+}
+.modal-cancel {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink-soft);
+  font:
+    700 14px Pretendard Variable,
+    Pretendard,
+    Arial,
+    sans-serif;
+  cursor: pointer;
+}
+.shutdown-icon {
+  background: #f3f3f3;
+  color: var(--ink);
+}

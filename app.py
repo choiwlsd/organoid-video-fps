@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import tempfile
+import threading
 from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request
@@ -27,6 +28,15 @@ def analyze():
     if not uploads or all(not upload.filename for upload in uploads):
         return jsonify({"error": "Please select video files to analyse."}), 400
     return jsonify({"results": [analyze_upload(upload) for upload in uploads if upload.filename], "rules": validation_rules()})
+
+
+@app.post("/api/shutdown")
+def shutdown():
+    """Stop only a locally run development server after sending its response."""
+    if request.remote_addr not in {"127.0.0.1", "::1"}:
+        return jsonify({"error": "Program shutdown is only available locally."}), 403
+    threading.Timer(0.25, os._exit, args=(0,)).start()
+    return jsonify({"message": "The local server is shutting down."})
 
 
 def analyze_upload(upload) -> dict[str, object]:
@@ -79,4 +89,4 @@ def validation_rules() -> dict[str, float]:
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)

@@ -5,6 +5,7 @@ const resultsSection = document.querySelector('#results-section');
 const loading = document.querySelector('#upload-loading');
 const modal = document.querySelector('#error-modal');
 const modalMessage = document.querySelector('#modal-message');
+const shutdownModal = document.querySelector('#shutdown-modal');
 const supportedExtensions = new Set(['avi', 'mp4', 'mov', 'mkv', 'wmv']);
 const isVercelDeployment = window.location.hostname.endsWith('.vercel.app');
 const vercelRequestLimit = 4 * 1024 * 1024;
@@ -30,6 +31,15 @@ document.querySelector('#clear').addEventListener('click', () => {
 document
   .querySelectorAll('[data-close-modal], #modal-confirm')
   .forEach((button) => button.addEventListener('click', closeModal));
+document.querySelector('#shutdown-button').addEventListener('click', () => {
+  shutdownModal.hidden = false;
+  document.body.classList.add('modal-open');
+  document.querySelector('#shutdown-confirm').focus();
+});
+document
+  .querySelectorAll('[data-close-shutdown]')
+  .forEach((button) => button.addEventListener('click', closeShutdownModal));
+document.querySelector('#shutdown-confirm').addEventListener('click', shutdownProgram);
 
 zone.addEventListener('click', (event) => {
   if (!activeUploads && !event.target.closest('button')) input.click();
@@ -137,6 +147,26 @@ function showModal(title, message) {
 function closeModal() {
   modal.hidden = true;
   document.body.classList.remove('modal-open');
+}
+
+function closeShutdownModal() {
+  shutdownModal.hidden = true;
+  document.body.classList.remove('modal-open');
+}
+
+async function shutdownProgram() {
+  const button = document.querySelector('#shutdown-confirm');
+  button.disabled = true;
+  button.textContent = '종료 중...';
+  try {
+    const response = await fetch('/api/shutdown', { method: 'POST' });
+    if (!response.ok) throw new Error('The program could not be closed from this environment.');
+    document.querySelector('#shutdown-title').textContent = '프로그램을 종료했습니다';
+    document.querySelector('#shutdown-message').textContent = '이 창을 닫아도 됩니다.';
+  } catch (error) {
+    closeShutdownModal();
+    showModal('Unable to close program', escapeHtml(error.message));
+  }
 }
 function isSupported(file) {
   return supportedExtensions.has(file.name.split('.').pop().toLowerCase());
