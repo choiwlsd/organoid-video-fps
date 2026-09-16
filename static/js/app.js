@@ -161,12 +161,24 @@ async function shutdownProgram() {
   try {
     const response = await fetch('/api/shutdown', { method: 'POST' });
     if (!response.ok) throw new Error('The program could not be closed from this environment.');
-    document.querySelector('#shutdown-title').textContent = '프로그램을 종료했습니다';
-    document.querySelector('#shutdown-message').textContent = '이 창을 닫아도 됩니다.';
+    closeShutdownModal();
+    showRestartScreen();
+    window.setTimeout(() => window.close(), 100);
   } catch (error) {
     closeShutdownModal();
     showModal('Unable to close program', escapeHtml(error.message));
   }
+}
+
+function showRestartScreen() {
+  document.body.innerHTML = `
+    <main style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#fff;font-family:Pretendard Variable,Pretendard,Arial,sans-serif;color:#111;text-align:center">
+      <section style="max-width:420px">
+        <p style="margin:0 0 12px;color:#737373;font-size:12px;font-weight:700;letter-spacing:.12em">PROGRAM CLOSED</p>
+        <h1 style="margin:0;font-size:32px;letter-spacing:-.05em">프로그램을 재시작해주세요.</h1>
+        <p style="margin:16px 0 0;color:#737373;font-size:14px;line-height:1.7">로컬 분석 서버가 종료되었습니다.<br> <code>.exe</code> 실행 파일을 더블 클릭하여 다시 접속하세요.</p>
+      </section>
+    </main>`;
 }
 function isSupported(file) {
   return supportedExtensions.has(file.name.split('.').pop().toLowerCase());
