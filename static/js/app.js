@@ -92,8 +92,13 @@ async function send(files) {
 
   try {
     const response = await fetch('/api/analyze', { method: 'POST', body: form });
-    const data = await response.json();
-    if (!response.ok) throw Error(data.error || 'Analysis request failed.');
+    const isJson = response.headers.get('content-type')?.includes('application/json');
+    const data = isJson ? await response.json() : null;
+    if (!response.ok) {
+      const reason =
+        data?.error || `Server returned HTTP ${response.status} ${response.statusText}`;
+      throw Error(reason);
+    }
     pending.forEach((item, index) =>
       Object.assign(
         item,

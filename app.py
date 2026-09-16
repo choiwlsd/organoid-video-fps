@@ -8,12 +8,13 @@ import threading
 from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request
+from werkzeug.exceptions import RequestEntityTooLarge
 
 from extract_avi_metadata import VIDEO_EXTENSIONS, extract_metadata
 
 app = Flask(__name__)
-# Vercel Functions cap request bodies at 4.5 MB; retain a small multipart safety margin.
-app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024
+# Vercel Functions cap request bodies at 4.5 MB, but local analysis must allow large video batches.
+app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024 if os.getenv("VERCEL") else 10 * 1024 * 1024 * 1024
 DURATION_WARNING_SECONDS = 31.0
 FPS_WARNING_THRESHOLD = 30.50
 
@@ -21,6 +22,11 @@ FPS_WARNING_THRESHOLD = 30.50
 @app.get("/")
 def index():
     return render_template("index.html")
+
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_file_too_large(_error):
+    return jsonify({"error": "The selected files exceed this server's upload size limit."}), 413
 
 
 @app.post("/api/analyze")
