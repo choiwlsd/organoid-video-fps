@@ -24,13 +24,12 @@ Open `http://127.0.0.1:5000` in your browser.
 
 ## Validation Rule
 
-| Field | Expected value | Tolerance |
-| ----- | -------------: | --------: |
-| FPS   |             30 |   +/- 0.1 |
+| Field    | Warning condition       |
+| -------- | ----------------------- |
+| FPS      | Greater than 30.50      |
+| Duration | 31.00 seconds or longer |
 
-Duration is displayed as informational metadata only. It does not affect the validation result.
-
-Change `EXPECTED_FPS` and `FPS_TOLERANCE` in `extract_avi_metadata.py` to use a different rule.
+Change `FPS_WARNING_THRESHOLD` and `DURATION_WARNING_SECONDS` in `app.py` to use different rules.
 
 ## Project Structure
 

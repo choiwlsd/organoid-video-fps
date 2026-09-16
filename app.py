@@ -9,17 +9,18 @@ from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request
 
-from extract_avi_metadata import EXPECTED_FPS, FPS_TOLERANCE, VIDEO_EXTENSIONS, extract_metadata
+from extract_avi_metadata import VIDEO_EXTENSIONS, extract_metadata
 
 app = Flask(__name__)
 # Vercel Functions cap request bodies at 4.5 MB; retain a small multipart safety margin.
 app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024
 DURATION_WARNING_SECONDS = 31.0
+FPS_WARNING_THRESHOLD = 30.50
 
 
 @app.get("/")
 def index():
-    return render_template("index.html", expected_fps=EXPECTED_FPS)
+    return render_template("index.html")
 
 
 @app.post("/api/analyze")
@@ -65,12 +66,12 @@ def analyze_upload(upload) -> dict[str, object]:
 
 
 def validate(metadata: dict[str, object]) -> tuple[str, list[str]]:
-    """Flag incorrect FPS and durations of 31 seconds or more."""
+    """Flag FPS above 30.50 and durations of 31 seconds or more."""
     fps = float(metadata["fps"])
     duration = metadata.get("duration_seconds")
     issues: list[str] = []
-    if abs(fps - EXPECTED_FPS) > FPS_TOLERANCE:
-        issues.append(f"FPS {fps:.3f} (expected {EXPECTED_FPS:g} +/- {FPS_TOLERANCE:g})")
+    if fps > FPS_WARNING_THRESHOLD:
+        issues.append(f"FPS {fps:.3f} (limit {FPS_WARNING_THRESHOLD:.2f})")
     if duration is not None and float(duration) >= DURATION_WARNING_SECONDS:
         issues.append(f"Duration {float(duration):.3f} s (limit {DURATION_WARNING_SECONDS:g} s)")
     return ("issue", issues) if issues else ("normal", [])
@@ -82,8 +83,7 @@ def error_result(file_name: str, message: str) -> dict[str, object]:
 
 def validation_rules() -> dict[str, float]:
     return {
-        "expected_fps": EXPECTED_FPS,
-        "fps_tolerance": FPS_TOLERANCE,
+        "fps_warning_threshold": FPS_WARNING_THRESHOLD,
         "duration_warning_seconds": DURATION_WARNING_SECONDS,
     }
 

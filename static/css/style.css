@@ -430,6 +430,14 @@ h1 em::after {
   margin-top: 70px;
 }
 
+.validation-rule {
+  margin: -6px 0 16px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
 .heading {
   display: flex;
   justify-content: space-between;
