@@ -112,6 +112,29 @@ def validation_rules() -> dict[str, float]:
         "duration_warning_seconds": DURATION_WARNING_SECONDS,
     }
 
+def terminate_process_after_response(delay_seconds: float = 0.5) -> None:
+    """Terminate the packaged application after the HTTP response is sent."""
+    time.sleep(delay_seconds)
+    os._exit(0)
+
+
+@app.post("/api/shutdown")
+def shutdown():
+    """Shut down the local packaged application."""
+    if not is_frozen():
+        return jsonify(
+            {
+                "error": "Shutdown is only available in the packaged application."
+            }
+        ), 403
+
+    threading.Thread(
+        target=terminate_process_after_response,
+        daemon=True,
+    ).start()
+
+    return jsonify({"ok": True})
+
 
 def open_browser_when_ready(url: str, timeout_seconds: float = 15.0) -> None:
     """Open the default browser only after the local Flask server responds."""
