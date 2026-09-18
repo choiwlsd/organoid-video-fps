@@ -62,3 +62,11 @@ npm run format:check
 ```
 
 `requirements.txt` contains both the runtime packages and PyInstaller. This branch builds and runs locally, so a separate development requirements file is unnecessary.
+
+## File Handling and Privacy
+
+The application runs locally. Uploaded videos are written to a temporary file while OpenCV analyses them, then deleted whether analysis succeeds or fails. Files are not permanently stored or sent to an external server.
+
+## Vercel Deployment Note
+
+The project can serve its Flask UI from Vercel using opencv-python-headless. However, Vercel Functions limit a request body to `4.5 MB`, so direct video uploads larger than approximately `4 MB` cannot be analyzed there. Use the local application for ordinary video files, or add a direct-to-storage upload and a separate video-processing service for production-scale uploads.
