@@ -1,4 +1,4 @@
-"""Local Flask application for analysing uploaded organoid videos."""
+"""Local Flask server for organoid video metadata analysis."""
 
 from __future__ import annotations
 
@@ -12,23 +12,30 @@ import urllib.error
 import urllib.request
 import webbrowser
 from pathlib import Path
+from typing import Any
 
 from flask import Flask, jsonify, render_template, request
+from werkzeug.exceptions import RequestEntityTooLarge
 
-from extract_avi_metadata import EXPECTED_FPS, FPS_TOLERANCE, VIDEO_EXTENSIONS, extract_metadata
+from extract_avi_metadata import (
+    DURATION_WARNING_SECONDS,
+    FPS_WARNING_THRESHOLD,
+    VIDEO_EXTENSIONS,
+    add_validation_result,
+    extract_metadata,
+)
 
 HOST = "127.0.0.1"
 PORT = 5000
-DURATION_WARNING_SECONDS = 31.0
 
 
 def is_frozen() -> bool:
-    """Return whether the application is running from a PyInstaller bundle."""
+    """Return whether the application runs from a PyInstaller bundle."""
     return bool(getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"))
 
 
 def resource_path(relative_path: str) -> Path:
-    """Resolve bundled resources in PyInstaller and source files in development."""
+    """Resolve resources from the bundle or project directory."""
     base_path = Path(sys._MEIPASS) if is_frozen() else Path(__file__).resolve().parent
     return base_path / relative_path
 
@@ -39,32 +46,30 @@ app = Flask(
     static_folder=str(resource_path("static")),
 )
 
-# Vercel Functions impose a small request-body limit. Keep that restriction only
-# on Vercel; local development and the Windows executable intentionally have no
-# Flask upload-size limit so normal/large videos can be analysed locally.
-if os.environ.get("VERCEL"):
-    app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024
-
-
 @app.get("/")
 def index():
-    return render_template("index.html", expected_fps=EXPECTED_FPS)
+    return render_template(
+        "index.html",
+        fps_warning_threshold=FPS_WARNING_THRESHOLD,
+        duration_warning_seconds=DURATION_WARNING_SECONDS,
+        packaged=is_frozen(),
+    )
+
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_file_too_large(_error):
+    return jsonify({"error": "The selected files exceed this server's upload size limit."}), 413
 
 
 @app.post("/api/analyze")
 def analyze():
-    uploads = request.files.getlist("files")
-    if not uploads or all(not upload.filename for upload in uploads):
+    uploads = [upload for upload in request.files.getlist("files") if upload.filename]
+    if not uploads:
         return jsonify({"error": "Please select video files to analyse."}), 400
-    return jsonify(
-        {
-            "results": [analyze_upload(upload) for upload in uploads if upload.filename],
-            "rules": validation_rules(),
-        }
-    )
+    return jsonify({"results": [analyze_upload(upload) for upload in uploads]})
 
 
-def analyze_upload(upload) -> dict[str, object]:
+def analyze_upload(upload) -> dict[str, Any]:
     original_name = upload.filename or "unnamed"
     suffix = Path(original_name).suffix.lower()
     if suffix not in VIDEO_EXTENSIONS:
@@ -72,16 +77,16 @@ def analyze_upload(upload) -> dict[str, object]:
 
     temp_path: Path | None = None
     try:
-        with tempfile.NamedTemporaryFile(suffix=suffix, prefix="organoid_", delete=False) as temp:
-            temp_path = Path(temp.name)
+        with tempfile.NamedTemporaryFile(suffix=suffix, prefix="organoid_", delete=False) as temp_file:
+            temp_path = Path(temp_file.name)
         upload.save(temp_path)
         if temp_path.stat().st_size == 0:
             return error_result(original_name, "The uploaded file is empty.")
-        metadata = extract_metadata(temp_path)
-        metadata["file"] = original_name
-        metadata["size_bytes"] = temp_path.stat().st_size
-        metadata["status"], metadata["issues"] = validate(metadata)
-        return metadata
+
+        result = add_validation_result(extract_metadata(temp_path))
+        result["file"] = original_name
+        result["size_bytes"] = temp_path.stat().st_size
+        return result
     except Exception as error:
         return error_result(original_name, f"Could not read video metadata: {error}")
     finally:
@@ -89,55 +94,26 @@ def analyze_upload(upload) -> dict[str, object]:
             temp_path.unlink()
 
 
-def validate(metadata: dict[str, object]) -> tuple[str, list[str]]:
-    """Flag incorrect FPS and durations of 31 seconds or more."""
-    fps = float(metadata["fps"])
-    duration = metadata.get("duration_seconds")
-    issues: list[str] = []
-    if abs(fps - EXPECTED_FPS) > FPS_TOLERANCE:
-        issues.append(f"FPS {fps:.3f} (expected {EXPECTED_FPS:g} +/- {FPS_TOLERANCE:g})")
-    if duration is not None and float(duration) >= DURATION_WARNING_SECONDS:
-        issues.append(f"Duration {float(duration):.3f} s (limit {DURATION_WARNING_SECONDS:g} s)")
-    return ("issue", issues) if issues else ("normal", [])
-
-
-def error_result(file_name: str, message: str) -> dict[str, object]:
+def error_result(file_name: str, message: str) -> dict[str, Any]:
     return {"file": file_name, "status": "error", "issues": [message]}
-
-
-def validation_rules() -> dict[str, float]:
-    return {
-        "expected_fps": EXPECTED_FPS,
-        "fps_tolerance": FPS_TOLERANCE,
-        "duration_warning_seconds": DURATION_WARNING_SECONDS,
-    }
-
-def terminate_process_after_response(delay_seconds: float = 0.5) -> None:
-    """Terminate the packaged application after the HTTP response is sent."""
-    time.sleep(delay_seconds)
-    os._exit(0)
 
 
 @app.post("/api/shutdown")
 def shutdown():
-    """Shut down the local packaged application."""
+    """End only the packaged local application after returning a response."""
     if not is_frozen():
-        return jsonify(
-            {
-                "error": "Shutdown is only available in the packaged application."
-            }
-        ), 403
-
-    threading.Thread(
-        target=terminate_process_after_response,
-        daemon=True,
-    ).start()
-
+        return jsonify({"error": "Program shutdown is only available in the packaged application."}), 403
+    threading.Thread(target=terminate_process_after_response, daemon=True).start()
     return jsonify({"ok": True})
 
 
+def terminate_process_after_response(delay_seconds: float = 0.5) -> None:
+    time.sleep(delay_seconds)
+    os._exit(0)
+
+
 def open_browser_when_ready(url: str, timeout_seconds: float = 15.0) -> None:
-    """Open the default browser only after the local Flask server responds."""
+    """Open the default browser after the bundled server starts responding."""
     deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
         try:
@@ -151,12 +127,11 @@ def open_browser_when_ready(url: str, timeout_seconds: float = 15.0) -> None:
 
 
 def run_local_app() -> None:
-    """Run the application locally, opening a browser for the packaged EXE."""
+    """Run the local server and open a browser for the packaged application."""
     url = f"http://{HOST}:{PORT}/"
-    frozen = is_frozen()
-    if frozen:
+    if is_frozen():
         threading.Thread(target=open_browser_when_ready, args=(url,), daemon=True).start()
-    app.run(host=HOST, port=PORT, debug=not frozen, use_reloader=not frozen)
+    app.run(host=HOST, port=PORT, debug=not is_frozen(), use_reloader=not is_frozen())
 
 
 if __name__ == "__main__":

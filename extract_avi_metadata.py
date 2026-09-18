@@ -1,113 +1,97 @@
-"""Extract metadata from every video in the video directory."""
+"""OpenCV metadata extraction and shared validation rules for organoid videos."""
+
+from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import cv2
-
 
 VIDEO_DIR = Path(__file__).with_name("video")
 RESULT_PATH = Path(__file__).with_name("result.txt")
 ISSUE_PATH = Path(__file__).with_name("issue.txt")
 VIDEO_EXTENSIONS = {".avi", ".mp4", ".mov", ".mkv", ".wmv"}
-EXPECTED_FPS = 30.0
-EXPECTED_DURATION_SECONDS = 30.0
-FPS_TOLERANCE = 0.1
-DURATION_TOLERANCE_SECONDS = 0.1
+
+# Single source of truth for the web UI and terminal workflow.
+FPS_WARNING_THRESHOLD = 30.50
+DURATION_WARNING_SECONDS = 31.0
 
 
-def extract_metadata(video_path: Path) -> dict[str, object]:
+def extract_metadata(video_path: Path) -> dict[str, Any]:
     """Read video metadata using OpenCV."""
     capture = cv2.VideoCapture(str(video_path))
     try:
         if not capture.isOpened():
-            raise RuntimeError(f"동영상 파일을 열 수 없습니다: {video_path}")
+            raise RuntimeError("Video file could not be opened.")
 
         fps = capture.get(cv2.CAP_PROP_FPS)
         frame_count = capture.get(cv2.CAP_PROP_FRAME_COUNT)
-        width = capture.get(cv2.CAP_PROP_FRAME_WIDTH)
-        height = capture.get(cv2.CAP_PROP_FRAME_HEIGHT)
         codec_value = int(capture.get(cv2.CAP_PROP_FOURCC))
         codec = "".join(
             chr((codec_value >> (8 * index)) & 0xFF)
             for index in range(4)
             if (codec_value >> (8 * index)) & 0xFF
         )
-
-        metadata: dict[str, object] = {
+        return {
             "file": video_path.name,
             "fps": fps,
             "frame_count": int(frame_count),
             "duration_seconds": frame_count / fps if fps > 0 else None,
-            "width": int(width),
-            "height": int(height),
+            "width": int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)),
+            "height": int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT)),
             "codec": codec or "unknown",
             "backend": capture.getBackendName(),
         }
-        return metadata
     finally:
         capture.release()
 
 
-def create_issue_report(results: list[dict[str, object]]) -> str:
-    """Create a report for videos outside the expected FPS or duration."""
-    issue_lines = [
-        "영상 이슈 목록",
-        f"기준 FPS: {EXPECTED_FPS:g} (허용 오차: ±{FPS_TOLERANCE:g})",
-        f"기준 duration: {EXPECTED_DURATION_SECONDS:g}초 "
-        f"(허용 오차: ±{DURATION_TOLERANCE_SECONDS:g}초)",
-        "",
-    ]
+def validation_issues(metadata: dict[str, Any]) -> list[str]:
+    """Return warning messages for metadata outside the project criteria."""
+    issues: list[str] = []
+    fps = float(metadata["fps"])
+    duration = metadata.get("duration_seconds")
 
-    for metadata in results:
-        file_name = metadata["file"]
-        if "error" in metadata:
-            issue_lines.append(f"- {file_name}: 메타데이터 추출 실패")
-            issue_lines.append(f"  이유: {metadata['error']}")
+    if fps > FPS_WARNING_THRESHOLD:
+        issues.append(f"FPS {fps:.3f} exceeds the {FPS_WARNING_THRESHOLD:.2f} limit.")
+    if duration is not None and float(duration) >= DURATION_WARNING_SECONDS:
+        issues.append(f"Duration {float(duration):.3f} s is at least {DURATION_WARNING_SECONDS:.0f} s.")
+    return issues
+
+
+def add_validation_result(metadata: dict[str, Any]) -> dict[str, Any]:
+    """Attach a shared status and issue list to metadata."""
+    issues = validation_issues(metadata)
+    return {**metadata, "status": "issue" if issues else "normal", "issues": issues}
+
+
+def analyze_directory() -> list[dict[str, Any]]:
+    """Analyze all supported video files in the default video directory."""
+    if not VIDEO_DIR.is_dir():
+        raise FileNotFoundError(f"Video directory not found: {VIDEO_DIR}")
+
+    results: list[dict[str, Any]] = []
+    for video_path in sorted(VIDEO_DIR.iterdir()):
+        if not video_path.is_file() or video_path.suffix.lower() not in VIDEO_EXTENSIONS:
             continue
-
-        issues: list[str] = []
-        fps = float(metadata["fps"])
-        duration = float(metadata["duration_seconds"])
-        if abs(fps - EXPECTED_FPS) > FPS_TOLERANCE:
-            issues.append(f"fps (실제 {fps:.3f})")
-        if abs(duration - EXPECTED_DURATION_SECONDS) > DURATION_TOLERANCE_SECONDS:
-            issues.append(f"duration (실제 {duration:.3f}초)")
-
-        if issues:
-            issue_lines.append(f"- {file_name}: {', '.join(issues)}")
-
-    if len(issue_lines) == 4:
-        issue_lines.append("이슈가 있는 영상이 없습니다.")
-
-    return "\n".join(issue_lines) + "\n"
+        try:
+            results.append(add_validation_result(extract_metadata(video_path)))
+        except RuntimeError as error:
+            results.append({"file": video_path.name, "status": "error", "issues": [str(error)]})
+    return results
 
 
 def main() -> None:
-    if not VIDEO_DIR.is_dir():
-        raise FileNotFoundError(f"video 폴더를 찾을 수 없습니다: {VIDEO_DIR}")
+    results = analyze_directory()
+    if not results:
+        raise FileNotFoundError(f"No supported video files found in: {VIDEO_DIR}")
 
-    video_paths = sorted(
-        path
-        for path in VIDEO_DIR.iterdir()
-        if path.is_file() and path.suffix.lower() in VIDEO_EXTENSIONS
-    )
-    if not video_paths:
-        raise FileNotFoundError(f"video 폴더에 영상 파일이 없습니다: {VIDEO_DIR}")
-
-    results: list[dict[str, object]] = []
-    for video_path in video_paths:
-        try:
-            results.append(extract_metadata(video_path))
-        except RuntimeError as error:
-            results.append({"file": video_path.name, "error": str(error)})
-
-    RESULT_PATH.write_text(
-        json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
-    ISSUE_PATH.write_text(create_issue_report(results), encoding="utf-8")
-    print(f"{len(video_paths)}개 영상의 메타데이터를 {RESULT_PATH}에 저장했습니다.")
-    print(f"FPS/duration 이슈 목록을 {ISSUE_PATH}에 저장했습니다.")
+    RESULT_PATH.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
+    issue_results = [result for result in results if result["status"] != "normal"]
+    ISSUE_PATH.write_text(json.dumps(issue_results, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"Saved metadata for {len(results)} video(s) to {RESULT_PATH}.")
+    print(f"Saved {len(issue_results)} warning/error result(s) to {ISSUE_PATH}.")
 
 
 if __name__ == "__main__":
