@@ -45,6 +45,8 @@ if (shutdownButton && shutdownModal) {
   document.querySelector('#shutdown-confirm').addEventListener('click', shutdownProgram);
 }
 
+setLoading(false);
+
 async function analyzeFiles(files) {
   if (isAnalyzing || !files.length) return;
   const accepted = files.filter(isSupported);
