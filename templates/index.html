@@ -59,9 +59,9 @@
             <p class="eyebrow">ANALYSIS RESULTS</p>
             <h2>분석 결과 <span id="file-count">0</span></h2>
             <p class="validation-rule">
-              WARNING IF FPS &lt; {{ '%.2f'|format(fps_warning_minimum) }} OR &gt; {{
+              WARNING IF <strong>FPS &lt; {{ '%.2f'|format(fps_warning_minimum) }} OR &gt; {{
               '%.2f'|format(fps_warning_maximum) }} · DURATION ≥ {{
-              '%.2f'|format(duration_warning_seconds) }} s
+              '%.2f'|format(duration_warning_seconds) }} s</strong>
             </p>
           </div>
           <button id="clear" class="clear-button" type="button" disabled>전체 지우기</button>
@@ -78,6 +78,16 @@
         <p id="empty" class="empty-state">파일을 추가하면 분석 결과가 여기에 표시됩니다.</p>
         <div id="table-wrap" class="table-wrap" hidden>
           <table>
+            <colgroup>
+              <col class="col-file" />
+              <col class="col-status" />
+              <col class="col-fps" />
+              <col class="col-frames" />
+              <col class="col-duration" />
+              <col class="col-resolution" />
+              <col class="col-codec" />
+              <col class="col-issues" />
+            </colgroup>
             <thead>
               <tr>
                 <th>파일명</th>
