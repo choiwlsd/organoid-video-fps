@@ -14,7 +14,8 @@ ISSUE_PATH = Path(__file__).with_name("issue.txt")
 VIDEO_EXTENSIONS = {".avi", ".mp4", ".mov", ".mkv", ".wmv"}
 
 # Single source of truth for the web UI and terminal workflow.
-FPS_WARNING_THRESHOLD = 30.50
+FPS_WARNING_MINIMUM = 30.00
+FPS_WARNING_MAXIMUM = 30.50
 DURATION_WARNING_SECONDS = 31.0
 
 
@@ -53,8 +54,10 @@ def validation_issues(metadata: dict[str, Any]) -> list[str]:
     fps = float(metadata["fps"])
     duration = metadata.get("duration_seconds")
 
-    if fps > FPS_WARNING_THRESHOLD:
-        issues.append(f"FPS {fps:.3f} exceeds the {FPS_WARNING_THRESHOLD:.2f} limit.")
+    if not FPS_WARNING_MINIMUM <= fps <= FPS_WARNING_MAXIMUM:
+        issues.append(
+            f"FPS {fps:.3f} is outside the {FPS_WARNING_MINIMUM:.2f}-{FPS_WARNING_MAXIMUM:.2f} range."
+        )
     if duration is not None and float(duration) >= DURATION_WARNING_SECONDS:
         issues.append(f"Duration {float(duration):.3f} s is at least {DURATION_WARNING_SECONDS:.0f} s.")
     return issues

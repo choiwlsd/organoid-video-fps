@@ -19,7 +19,8 @@ from werkzeug.exceptions import RequestEntityTooLarge
 
 from extract_avi_metadata import (
     DURATION_WARNING_SECONDS,
-    FPS_WARNING_THRESHOLD,
+    FPS_WARNING_MAXIMUM,
+    FPS_WARNING_MINIMUM,
     VIDEO_EXTENSIONS,
     add_validation_result,
     extract_metadata,
@@ -50,7 +51,8 @@ app = Flask(
 def index():
     return render_template(
         "index.html",
-        fps_warning_threshold=FPS_WARNING_THRESHOLD,
+        fps_warning_minimum=FPS_WARNING_MINIMUM,
+        fps_warning_maximum=FPS_WARNING_MAXIMUM,
         duration_warning_seconds=DURATION_WARNING_SECONDS,
         packaged=is_frozen(),
     )

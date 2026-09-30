@@ -59,7 +59,8 @@
             <p class="eyebrow">ANALYSIS RESULTS</p>
             <h2>분석 결과 <span id="file-count">0</span></h2>
             <p class="validation-rule">
-              WARNING IF FPS &gt; {{ '%.2f'|format(fps_warning_threshold) }} · DURATION ≥ {{
+              WARNING IF FPS &lt; {{ '%.2f'|format(fps_warning_minimum) }} OR &gt; {{
+              '%.2f'|format(fps_warning_maximum) }} · DURATION ≥ {{
               '%.2f'|format(duration_warning_seconds) }} s
             </p>
           </div>

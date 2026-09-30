@@ -118,7 +118,7 @@ function createRow(item) {
   const notes =
     item.status === 'loading'
       ? '<span class="inline-loader"></span>Analyzing with OpenCV'
-      : (item.issues || []).map(escapeHtml).join('<br>') || 'All checks passed';
+      : formatIssues(item.issues);
   return `<tr class="result-row-${item.status}"><td class="file-name">${escapeHtml(item.file)}</td><td><span class="badge status-${item.status}">${labels[item.status]}</span></td><td class="number-cell">${formatNumber(item.fps, 3)}</td><td class="number-cell">${item.frame_count ?? '-'}</td><td class="number-cell">${item.duration_seconds == null ? '-' : `${formatNumber(item.duration_seconds, 3)} s`}</td><td class="number-cell">${item.width && item.height ? `${item.width} × ${item.height}` : '-'}</td><td>${escapeHtml(item.codec || '-')}<small>${item.size_bytes ? formatSize(item.size_bytes) : ''}</small></td><td class="notes">${notes}</td></tr>`;
 }
 
@@ -163,6 +163,12 @@ function formatNumber(value, digits) {
 function formatSize(bytes) {
   return bytes < 1048576 ? `${(bytes / 1024).toFixed(0)} KB` : `${(bytes / 1048576).toFixed(1)} MB`;
 }
+
+function formatIssues(issues) {
+  if (!issues?.length) return 'All checks passed';
+  return `<ul class="issue-list">${issues.map((issue) => `<li>${escapeHtml(issue)}</li>`).join('')}</ul>`;
+}
+
 function escapeHtml(value) {
   return String(value ?? '').replace(
     /[&<>'"]/g,
