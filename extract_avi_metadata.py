@@ -55,11 +55,9 @@ def validation_issues(metadata: dict[str, Any]) -> list[str]:
     duration = metadata.get("duration_seconds")
 
     if not FPS_WARNING_MINIMUM <= fps <= FPS_WARNING_MAXIMUM:
-        issues.append(
-            f"FPS {fps:.3f} is outside the {FPS_WARNING_MINIMUM:.2f}-{FPS_WARNING_MAXIMUM:.2f} range."
-        )
+        issues.append(f"FPS: {fps:.3f}")
     if duration is not None and float(duration) >= DURATION_WARNING_SECONDS:
-        issues.append(f"Duration {float(duration):.3f} s is at least {DURATION_WARNING_SECONDS:.0f} s.")
+        issues.append(f"Duration: {float(duration):.3f} s")
     return issues
 
 

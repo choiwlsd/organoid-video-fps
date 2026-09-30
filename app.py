@@ -97,7 +97,12 @@ def analyze_upload(upload) -> dict[str, Any]:
 
 
 def error_result(file_name: str, message: str) -> dict[str, Any]:
-    return {"file": file_name, "status": "error", "issues": [message]}
+    return {
+        "file": file_name,
+        "status": "error",
+        "issues": ["Analysis failed."],
+        "error_detail": message,
+    }
 
 
 @app.post("/api/shutdown")

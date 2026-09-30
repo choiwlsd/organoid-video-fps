@@ -130,7 +130,7 @@ function showAnalysisErrors(items) {
       errors
         .map(
           (item) =>
-            `<strong>${escapeHtml(item.file)}</strong><br>${item.issues.map(escapeHtml).join('<br>')}`,
+            `<strong>${escapeHtml(item.file)}</strong><br>${(item.error_detail ? [item.error_detail] : item.issues).map(escapeHtml).join('<br>')}`,
         )
         .join('<hr>'),
     );
@@ -155,7 +155,7 @@ function isSupported(file) {
   return supportedExtensions.has(file.name.split('.').pop()?.toLowerCase());
 }
 function errorResult(file, message) {
-  return { file, status: 'error', issues: [message] };
+  return { file, status: 'error', issues: ['Analysis failed.'], error_detail: message };
 }
 function formatNumber(value, digits) {
   return Number.isFinite(Number(value)) ? Number(value).toFixed(digits) : '-';
