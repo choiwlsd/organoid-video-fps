@@ -24,10 +24,10 @@ Open `http://127.0.0.1:5000` in a browser.
 
 ## Validation Rules
 
-| Field    | Warning condition         |
-| -------- | ------------------------- |
-| FPS      | Greater than `30.50`      |
-| Duration | `31.00` seconds or longer |
+| Field    | Warning condition                         |
+| -------- | ----------------------------------------- |
+| FPS      | Less than `30.00` or greater than `30.50` |
+| Duration | `31.00` seconds or longer                 |
 
 The rules are defined once in `extract_avi_metadata.py` and are used by both the Flask UI and terminal workflow.
 

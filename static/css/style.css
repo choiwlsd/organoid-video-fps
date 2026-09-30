@@ -14,6 +14,10 @@
 * {
   box-sizing: border-box;
 }
+
+[hidden] {
+  display: none !important;
+}
 html {
   scroll-behavior: smooth;
 }
@@ -217,14 +221,13 @@ h1 em {
   }
 }
 .dashboard {
-  margin-top: 70px;
-  margin-bottom: 30px;
+  margin: 72px 0 36px;
 }
 .section-heading {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 17px;
+  gap: 24px;
 }
 .section-heading .eyebrow {
   margin-bottom: 6px;
@@ -240,7 +243,7 @@ h1 em {
   font-weight: 500;
 }
 .validation-rule {
-  margin: 8px 0 17px;
+  margin: 8px 0 0;
   color: var(--muted);
   font-size: 11px;
   font-weight: 600;
@@ -249,7 +252,7 @@ h1 em {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   overflow: hidden;
-  margin-bottom: 24px;
+  margin: 20px 0 28px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
@@ -288,34 +291,70 @@ h1 em {
   font-size: 13px;
 }
 .table-wrap {
+  max-height: 600px;
   overflow: auto;
   border: 1px solid var(--line);
   border-radius: var(--radius);
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(22, 29, 25, 0.04);
 }
 .table-wrap table {
   width: 100%;
   min-width: 980px;
-  border-collapse: collapse;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
   background: #fff;
 }
+.col-file {
+  width: 16%;
+}
+.col-status {
+  width: 11%;
+}
+.col-fps {
+  width: 8%;
+}
+.col-frames {
+  width: 9%;
+}
+.col-duration {
+  width: 9%;
+}
+.col-resolution {
+  width: 11%;
+}
+.col-codec {
+  width: 10%;
+}
+.col-issues {
+  width: 25%;
+}
 th {
-  padding: 15px 18px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 52px;
+  padding: 0 16px;
   background: #f7f8f7;
-  border-bottom: 1px solid var(--line);
+  box-shadow: inset 0 -1px 0 var(--line);
   color: #68746e;
-  text-align: left;
+  text-align: center;
+  vertical-align: middle;
   font-size: 11px;
   letter-spacing: 0.06em;
 }
 td {
-  padding: 19px 18px;
-  border-bottom: 1px solid #edf0ee;
+  height: 88px;
+  padding: 16px;
   color: #303630;
+  text-align: center;
+  vertical-align: middle;
   font-size: 14px;
-  line-height: 1.45;
+  line-height: 1.5;
 }
-tbody tr:last-child td {
-  border: 0;
+tbody tr:not(:last-child) {
+  box-shadow: inset 0 -1px 0 #edf0ee;
 }
 tbody tr:nth-child(even) td {
   background: #fcfdfc;
@@ -324,10 +363,11 @@ tbody tr:hover td {
   background: #f3faf5;
 }
 .file-name {
-  min-width: 220px;
   color: var(--ink);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 750;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 .number-cell {
   color: #404842;
@@ -341,9 +381,19 @@ td small {
   font-size: 11px;
 }
 .notes {
-  min-width: 190px;
   font-size: 13px;
   font-weight: 550;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.issue-list {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  line-height: 1.45;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 .result-row-normal .notes {
   color: var(--green);

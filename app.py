@@ -19,7 +19,8 @@ from werkzeug.exceptions import RequestEntityTooLarge
 
 from extract_avi_metadata import (
     DURATION_WARNING_SECONDS,
-    FPS_WARNING_THRESHOLD,
+    FPS_WARNING_MAXIMUM,
+    FPS_WARNING_MINIMUM,
     VIDEO_EXTENSIONS,
     add_validation_result,
     extract_metadata,
@@ -50,7 +51,8 @@ app = Flask(
 def index():
     return render_template(
         "index.html",
-        fps_warning_threshold=FPS_WARNING_THRESHOLD,
+        fps_warning_minimum=FPS_WARNING_MINIMUM,
+        fps_warning_maximum=FPS_WARNING_MAXIMUM,
         duration_warning_seconds=DURATION_WARNING_SECONDS,
         packaged=is_frozen(),
     )
@@ -95,7 +97,12 @@ def analyze_upload(upload) -> dict[str, Any]:
 
 
 def error_result(file_name: str, message: str) -> dict[str, Any]:
-    return {"file": file_name, "status": "error", "issues": [message]}
+    return {
+        "file": file_name,
+        "status": "error",
+        "issues": ["Analysis failed."],
+        "error_detail": message,
+    }
 
 
 @app.post("/api/shutdown")
